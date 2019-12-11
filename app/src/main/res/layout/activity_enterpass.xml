@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Enterpass"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="wpisz_hasło" />
+
+    <EditText
+        android:id="@+id/editText4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPassword" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ok"/>
+
+    <EditText
+        android:id="@+id/editTexttest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPassword"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/buttontest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="encrypt"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textViewtest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="wynik encrypt "
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/buttontest1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="decrypt"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textViewtest1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+</LinearLayout>

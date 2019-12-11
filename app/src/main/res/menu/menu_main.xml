@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- NEW NOTE -->
+    <item
+        android:id="@+id/action_chpass"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_secure"
+        android:orderInCategory="1"
+        android:title="change password"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_create"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_add"
+        android:orderInCategory="1"
+        android:title="create"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_dark_light_mode"
+        android:enabled="true"
+        android:icon="@android:drawable/editbox_dropdown_dark_frame"
+        android:orderInCategory="1"
+        android:title="create"
+        android:visible="true"
+        app:showAsAction="always" />
+
+
+</menu>
