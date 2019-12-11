@@ -39,7 +39,6 @@ public class ChPass extends AppCompatActivity {
         editText1 = (EditText) findViewById(R.id.editText1);
         editText2 = (EditText) findViewById(R.id.editText2);
         button = (Button) findViewById(R.id.button);
-        final Crpass pass = new Crpass();
         final PasswordStorage pasy = new PasswordStorage();
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,19 +85,6 @@ public class ChPass extends AppCompatActivity {
         });
 
 
-    }
-    public static KeyPair generateKeyPair() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore");
-        kpg.initialize(new KeyGenParameterSpec.Builder(
-                "alias",
-                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                .setDigests(KeyProperties.DIGEST_SHA256,
-                        KeyProperties.DIGEST_SHA512)
-                .build());
-
-        KeyPair kp = kpg.generateKeyPair();
-        return kp;
     }
 
 }

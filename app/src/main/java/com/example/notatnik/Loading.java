@@ -1,5 +1,7 @@
 package com.example.notatnik;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -23,7 +25,39 @@ public class Loading extends AppCompatActivity {
         myDB = new DatabaseHelper(this);
         button = (Button) findViewById(R.id.buttonfinger);
         button2 = (Button) findViewById(R.id.buttonhaslo);
+        /*AlertDialog.Builder dialogDelete = new AlertDialog.Builder(this)
+                .setTitle("Usun notatke")
+                .setMessage("Usunac?")
+                .setPositiveButton("Fingerprint", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(getApplicationContext(),FingerActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                })
+                .setNegativeButton("Password", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        SharedPreferences settings = getSharedPreferences("PREFS",0);
+                        password = settings.getString("hasło","");
+                        if(password == null){
+                            //tworzenie hasla
+                            Toast.makeText(Loading.this, "Pierwsze logowanie. Stworz haslo", Toast.LENGTH_LONG).show();
+                            Intent intent = new Intent(getApplicationContext(),Crpass.class);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            Intent intent = new Intent(getApplicationContext(),Enterpass.class);
+                            startActivity(intent);
+                            finish();
+                        }
+                    }
+                }); //do nothing on clicking NO button :P
 
+        dialogDelete.show();
+
+         */
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

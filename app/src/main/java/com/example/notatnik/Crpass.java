@@ -52,21 +52,14 @@ public class Crpass extends AppCompatActivity {
                         if(text1.equals(text2)){
                                 String passhash;
                                 try {
-                                    RSAKeyPairGenerator keyPairGenerator = new RSAKeyPairGenerator();
-                                    String pairpub = keyPairGenerator.rsapub();
-                                    String pairpr = keyPairGenerator.rsapriv();
-                                    //Toast.makeText(Crpass.this, pairpub, Toast.LENGTH_LONG).show();
-                                    //Toast.makeText(Crpass.this, pairpr, Toast.LENGTH_LONG).show();
+
                                     byte[] sole = pasy.salte();
                                     String sola = Base64.getEncoder().encodeToString(sole);
                                     passhash = PasswordStorage.createHash(sole,text2);
-                                    myDB.insertData(sola,passhash,pairpr,pairpub);
                                     SharedPreferences settings = getSharedPreferences("PREFS",0);
                                     SharedPreferences.Editor editor = settings.edit();
                                     editor.putString("sol", sola);
                                     editor.putString("hasło", passhash);
-                                    editor.putString("kluczpryw", pairpr);
-                                    editor.putString("kluczpub", pairpub);
                                     editor.apply();
                                     Toast.makeText(Crpass.this, "Zapisano hasło. Witaj", Toast.LENGTH_LONG).show();
                                     Intent intent = new Intent(getApplicationContext(),MainActivity.class);

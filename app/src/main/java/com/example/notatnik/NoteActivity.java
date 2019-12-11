@@ -51,8 +51,6 @@ public class NoteActivity extends AppCompatActivity {
     private String mFileName;
     private Note mLoadedNote = null;
     private String test, test2;
-    String przedrsa;
-    PasswordStorage passsy = new PasswordStorage();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,47 +58,13 @@ public class NoteActivity extends AppCompatActivity {
         setContentView(R.layout.activity_note);
         mEtTitle = (EditText) findViewById(R.id.note_et_title);
         mEtContent = (EditText) findViewById(R.id.note_et_content);
-        String pasy = null;
-        String password = null;
-        String sol = null;
         SharedPreferences settings = getSharedPreferences("PREFS",0);
-        password = settings.getString("hasło","");
-        sol = settings.getString("sol","");
+
         mFileName = getIntent().getStringExtra(Utilities.EXTRAS_NOTE_FILENAME);
         if (mFileName != null && !mFileName.isEmpty() && mFileName.endsWith(Utilities.FILE_EXTENSION)) {
             mLoadedNote = Utilities.getNoteByFileName(getApplicationContext(), mFileName);
             if (mLoadedNote != null) {
-                String pub;
-                String priv = null;
-                String porsa = null;
-                String zaszyro = null;
-                zaszyro = settings.getString("szyfr","");
-                priv = settings.getString("kluczpryw","");
-                //Toast.makeText(this,zaszyro, Toast.LENGTH_SHORT).show();
-                //Toast.makeText(this,priv, Toast.LENGTH_SHORT).show();
-                /*try {
-                    porsa = rsaUtil.decrypto(zaszyro,priv);
-                    Toast.makeText(this,porsa, Toast.LENGTH_SHORT).show();
-                } catch (IllegalBlockSizeException e) {
-                    Toast.makeText(this,e.toString(), Toast.LENGTH_SHORT).show();
-                    mEtTitle.setText(e.toString());
-                } catch (InvalidKeyException e) {
-                    Toast.makeText(this,e.toString(), Toast.LENGTH_SHORT).show();
-                    mEtTitle.setText(e.toString());
-                } catch (BadPaddingException e) {
-                    Toast.makeText(this,e.toString(), Toast.LENGTH_SHORT).show();
-                    mEtTitle.setText(e.toString());
-                } catch (NoSuchAlgorithmException e) {
-                    Toast.makeText(this,e.toString(), Toast.LENGTH_SHORT).show();
-                    mEtTitle.setText(e.toString());
-                } catch (NoSuchPaddingException e) {
-                    Toast.makeText(this,e.toString(), Toast.LENGTH_SHORT).show();
-                    mEtTitle.setText(e.toString());
-                } catch (InvalidAlgorithmParameterException e) {
-                    e.printStackTrace();
-                }
 
-                 */
                 //update the widgets from the loaded note
                 String secretKey = settings.getString(mLoadedNote.getTitle(),"");
                 //Toast.makeText(this,secretKey, Toast.LENGTH_SHORT).show();
@@ -116,8 +80,6 @@ public class NoteActivity extends AppCompatActivity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                //mEtTitle.setText(decrypt(mLoadedNote.getTitle(), porsa, sol));
-                //mEtContent.setText(decrypt(mLoadedNote.getContent(), porsa, sol));
                 mNoteCreationTime = mLoadedNote.getDateTime();
                 mIsViewingOrUpdating = true;
             }
@@ -155,12 +117,7 @@ public class NoteActivity extends AppCompatActivity {
     }
     private void saveNote() throws Exception {
         Note note;
-        String pasy;
-        String password;
-        String sol;
-        SharedPreferences settingse = getSharedPreferences("PREFS",0);
-        password = settingse.getString("hasło","");
-        sol = settingse.getString("sol","");
+
         test = mEtTitle.getText().toString();
         test2 = mEtContent.getText().toString();
         mEtTitle.setText(encryptString(test));
