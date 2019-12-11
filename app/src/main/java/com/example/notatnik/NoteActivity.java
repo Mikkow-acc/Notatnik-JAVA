@@ -66,10 +66,6 @@ public class NoteActivity extends AppCompatActivity {
             if (mLoadedNote != null) {
 
                 //update the widgets from the loaded note
-                String secretKey = settings.getString(mLoadedNote.getTitle(),"");
-                //Toast.makeText(this,secretKey, Toast.LENGTH_SHORT).show();
-                //Toast.makeText(this,mLoadedNote.getTitle(), Toast.LENGTH_SHORT).show();
-                //Toast.makeText(this,mLoadedNote.getContent(), Toast.LENGTH_SHORT).show();
                 try {
                     mEtTitle.setText(decryptString(mLoadedNote.getTitle()));
                 } catch (Exception e) {

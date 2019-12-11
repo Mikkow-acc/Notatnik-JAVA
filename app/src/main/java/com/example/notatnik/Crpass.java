@@ -52,7 +52,8 @@ public class Crpass extends AppCompatActivity {
                         if(text1.equals(text2)){
                                 String passhash;
                                 try {
-
+                                    //Toast.makeText(Crpass.this, pairpub, Toast.LENGTH_LONG).show();
+                                    //Toast.makeText(Crpass.this, pairpr, Toast.LENGTH_LONG).show();
                                     byte[] sole = pasy.salte();
                                     String sola = Base64.getEncoder().encodeToString(sole);
                                     passhash = PasswordStorage.createHash(sole,text2);

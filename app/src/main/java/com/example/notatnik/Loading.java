@@ -74,7 +74,7 @@ public class Loading extends AppCompatActivity {
             public void onClick(View v) {
                 SharedPreferences settings = getSharedPreferences("PREFS",0);
                 password = settings.getString("hasło","");
-                if(password == null){
+                if(password == "" || password == null){
                     //tworzenie hasla
                     Toast.makeText(Loading.this, "Pierwsze logowanie. Stworz haslo", Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(getApplicationContext(),Crpass.class);
