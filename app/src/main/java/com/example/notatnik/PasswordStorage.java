@@ -160,57 +160,5 @@ public class PasswordStorage
         return message;
 
     }
-    public final HashMap encrypt(byte[] dataToEncrypt, char[] password) {
-        HashMap map = new HashMap();
-
-        try {
-            SecureRandom random = new SecureRandom();
-            byte[] salt = new byte[256];
-            random.nextBytes(salt);
-            PBEKeySpec pbKeySpec = new PBEKeySpec(password, salt, 1324, 256);
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            SecretKey var10000 = secretKeyFactory.generateSecret((KeySpec)pbKeySpec);
-            byte[] keyBytes = var10000.getEncoded();
-            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-            SecureRandom ivRandom = new SecureRandom();
-            byte[] iv = new byte[16];
-            ivRandom.nextBytes(iv);
-            IvParameterSpec ivSpec = new IvParameterSpec(iv);
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-            cipher.init(1, (Key)keySpec, (AlgorithmParameterSpec)ivSpec);
-            byte[] encrypted = cipher.doFinal(dataToEncrypt);
-            ((Map)map).put("salt", salt);
-            ((Map)map).put("iv", iv);
-            Map var16 = (Map)map;
-            var16.put("encrypted", encrypted);
-        } catch (Exception var15) {
-            Log.e("MYAPP", "encryption exception", (Throwable)var15);
-        }
-
-        return map;
-    }
-    public final byte[] decrypt(HashMap map, char[] password) {
-        byte[] decrypted = (byte[])null;
-
-        try {
-            byte[] salt = (byte[])map.get("salt");
-            byte[] iv = (byte[])map.get("iv");
-            byte[] encrypted = (byte[])map.get("encrypted");
-            PBEKeySpec pbKeySpec = new PBEKeySpec(password, salt, 1324, 256);
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            SecretKey var10000 = secretKeyFactory.generateSecret((KeySpec)pbKeySpec);
-            byte[] keyBytes = var10000.getEncoded();
-            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-            IvParameterSpec ivSpec = new IvParameterSpec(iv);
-            cipher.init(2, (Key)keySpec, (AlgorithmParameterSpec)ivSpec);
-            decrypted = cipher.doFinal(encrypted);
-        } catch (Exception var13) {
-            Log.e("MYAPP", "decryption exception", (Throwable)var13);
-        }
-
-        return decrypted;
-    }
-
 
 }

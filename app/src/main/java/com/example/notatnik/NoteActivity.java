@@ -1,46 +1,54 @@
 package com.example.notatnik;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyPermanentlyInvalidatedException;
+import android.security.keystore.KeyProperties;
 import android.util.Base64;
+import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
+import java.security.Key;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.security.spec.KeySpec;
-import java.util.Arrays;
+import java.security.SignatureException;
+import java.security.UnrecoverableEntryException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class NoteActivity extends AppCompatActivity {
     DatabaseHelper myDB;
@@ -51,6 +59,18 @@ public class NoteActivity extends AppCompatActivity {
     private String mFileName;
     private Note mLoadedNote = null;
     private String test, test2;
+    private String ALGORITHM = "AES";
+    KeyStore keyStore;
+    KeyGenerator keyGenerator;
+    Cipher cipher;
+    public Cipher ce;
+    public SecretKey sKey;
+    public byte[] iv;
+    String mEncodedData;
+    private static final String ANDROID_KEY_STORE_NAME = "AndroidKeyStore";
+    private static final String KEY_ALIAS = "YOUR-KeyAliasForEncryption";
+    private static final String CHARSET_NAME = "UTF-8";
+    private final static Object s_keyInitLock = new Object();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,23 +78,22 @@ public class NoteActivity extends AppCompatActivity {
         setContentView(R.layout.activity_note);
         mEtTitle = (EditText) findViewById(R.id.note_et_title);
         mEtContent = (EditText) findViewById(R.id.note_et_content);
-        SharedPreferences settings = getSharedPreferences("PREFS",0);
 
         mFileName = getIntent().getStringExtra(Utilities.EXTRAS_NOTE_FILENAME);
         if (mFileName != null && !mFileName.isEmpty() && mFileName.endsWith(Utilities.FILE_EXTENSION)) {
             mLoadedNote = Utilities.getNoteByFileName(getApplicationContext(), mFileName);
             if (mLoadedNote != null) {
-
                 //update the widgets from the loaded note
                 try {
-                    mEtTitle.setText(decryptString(mLoadedNote.getTitle()));
+                    mEtTitle.setText(decryptData(mLoadedNote.getTitle()));
+                    mEtContent.setText(decryptData(mLoadedNote.getContent()));
+
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    mEtContent.setText(e.toString());
                 }
                 try {
-                    mEtContent.setText(decryptString(mLoadedNote.getContent()));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Toast.makeText(this,e.toString(), Toast.LENGTH_SHORT).show();
                 }
                 mNoteCreationTime = mLoadedNote.getDateTime();
                 mIsViewingOrUpdating = true;
@@ -113,13 +132,11 @@ public class NoteActivity extends AppCompatActivity {
     }
     private void saveNote() throws Exception {
         Note note;
-
         test = mEtTitle.getText().toString();
         test2 = mEtContent.getText().toString();
-        mEtTitle.setText(encryptString(test));
-        mEtContent.setText(encryptString(test2));
+        mEtTitle.setText(encryptData(test));
+        mEtContent.setText(encryptData(test2));
         if(mLoadedNote == null){
-            //Toast.makeText(this,pora, Toast.LENGTH_SHORT).show();
             note = new Note(System.currentTimeMillis(), mEtTitle.getText().toString(),
                     mEtContent.getText().toString());
         } else{
@@ -128,7 +145,6 @@ public class NoteActivity extends AppCompatActivity {
         }
 
         if(Utilities.saveNote(this, note)){
-            //Toast.makeText(this,"haslo przed" + pasy, Toast.LENGTH_SHORT).show();
             Toast.makeText(this,"zapisano", Toast.LENGTH_SHORT).show();
             finish();
         } else{
@@ -146,7 +162,8 @@ public class NoteActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         if(mLoadedNote != null && Utilities.deleteFile(getApplicationContext(), mFileName)) {
                             SharedPreferences preferences = getSharedPreferences("PREFS", 0);
-                            preferences.edit().remove("text").commit();
+                            preferences.edit().remove(mLoadedNote.getTitle()).commit();
+                            preferences.edit().remove(mLoadedNote.getContent()).commit();
                             Toast.makeText(NoteActivity.this, mLoadedNote.getTitle() + " usunieto"
                                     , Toast.LENGTH_SHORT).show();
                         } else {
@@ -160,67 +177,122 @@ public class NoteActivity extends AppCompatActivity {
 
         dialogDelete.show();
     }
-    public String encryptString(String dataToEncrypt) {
+    
+    private void initKeys() throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, NoSuchProviderException, InvalidAlgorithmParameterException, UnrecoverableEntryException, NoSuchPaddingException, InvalidKeyException {
+        KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE_NAME);
+        keyStore.load(null);
 
-        try {
-            SharedPreferences prefs = getSharedPreferences("PREFS", 0);
-            if (prefs.getString("SECRET_KEY","") == "") {
-                SecretKey secretKey = KeyGenerator.getInstance("AES").generateKey();
-                String stringSecretKey = Base64.encodeToString(
-                        secretKey.getEncoded(), Base64.DEFAULT);
-
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putString("SECRET_KEY", stringSecretKey);
-                editor.commit();
-
+        if (!keyStore.containsAlias(KEY_ALIAS)) {
+            initValidKeys();
+        } else {
+            boolean keyValid = false;
+            try {
+                KeyStore.Entry keyEntry = keyStore.getEntry(KEY_ALIAS, null);
+                if (keyEntry instanceof KeyStore.SecretKeyEntry &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    keyValid = true;
+                }
+            } catch (NullPointerException | UnrecoverableKeyException e) {
             }
-            if (prefs.getString("SECRET_KEY","") != "") {
-                byte[] encodedBytes = null;
 
-                Cipher c = Cipher.getInstance("AES");
-                String key =prefs.getString("SECRET_KEY","");
-
-                byte[] encodedKey = Base64.decode(key, Base64.DEFAULT);
-                SecretKey originalKey = new SecretKeySpec(encodedKey, 0,
-                        encodedKey.length, "AES");
-                c.init(Cipher.ENCRYPT_MODE, originalKey);
-                encodedBytes = c.doFinal(dataToEncrypt.getBytes());
-
-                return Base64.encodeToString(encodedBytes, Base64.CRLF);
-            } else {
-                return null;
+            if (!keyValid) {
+                synchronized (s_keyInitLock) {
+                    // System upgrade or something made key invalid
+                    removeKeys(keyStore);
+                    initValidKeys();
+                }
             }
-        } catch (Exception e) {
-//          Log.e(TAG, "AES encryption error");
-            return null;
         }
     }
-    public String decryptString(String dataToDecrypt) {
-        SharedPreferences prefs= getSharedPreferences("PREFS", 0);
-        if (prefs.getString("SECRET_KEY","") != "") {
-            byte[] decodedBytes = null;
-            try {
-                Cipher c = Cipher.getInstance("AES");
+    protected void removeKeys(KeyStore keyStore) throws KeyStoreException {
+        keyStore.deleteEntry(KEY_ALIAS);
+    }
 
-                String key = prefs.getString("SECRET_KEY","");
-                byte[] encodedKey = Base64.decode(key, Base64.DEFAULT);
-                SecretKey originalKey = new SecretKeySpec(encodedKey, 0,
-                        encodedKey.length, "AES");
-                c.init(Cipher.DECRYPT_MODE, originalKey);
+    private void initValidKeys() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, CertificateException, UnrecoverableEntryException, NoSuchPaddingException, KeyStoreException, InvalidKeyException, IOException {
+        synchronized (s_keyInitLock) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                generateKeys();
+            }
+        }
+    }
 
-                byte[] dataInBytes = Base64.decode(dataToDecrypt,
-                        Base64.DEFAULT);
 
-                decodedBytes = c.doFinal(dataInBytes);
+    protected void generateKeys() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        KeyGenerator keyGenerator;
+        keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE_NAME);
+        keyGenerator.init(
+                new KeyGenParameterSpec.Builder(KEY_ALIAS,
+                        KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        .setRandomizedEncryptionRequired(false)
+                        .setUserAuthenticationRequired(true)
+                        .setUserAuthenticationValidityDurationSeconds(300)
+                        .build());
+        keyGenerator.generateKey();
+    }
+
+    public String encryptData(String stringDataToEncrypt) throws NoSuchPaddingException, NoSuchAlgorithmException, UnrecoverableEntryException, CertificateException, KeyStoreException, IOException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchProviderException, BadPaddingException, IllegalBlockSizeException {
+
+        try{
+            initKeys();
+
+
+        if (stringDataToEncrypt == null) {
+            throw new IllegalArgumentException("Data to be decrypted must be non null");
+        }
+
+        Cipher cipher;
+        cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, getSecretKey());
+
+        byte[] encodedBytes = cipher.doFinal(stringDataToEncrypt.getBytes(CHARSET_NAME));
+        String encryptedBase64Encoded = PasswordStorage.toBase64(encodedBytes);
+        SharedPreferences prefs = getSharedPreferences("PREFS", 0);
+        if (prefs.getString(encryptedBase64Encoded,"") == "") {
+            String stringSecretKey = PasswordStorage.toBase64(cipher.getIV());
+            SharedPreferences.Editor editory = prefs.edit();
+            editory.putString(encryptedBase64Encoded, stringSecretKey);
+            editory.commit();
+            }
+        return encryptedBase64Encoded;
+        } catch (Exception e) {
+            return e.toString();
+    }}
+
+    public String decryptData(String encryptedData) throws NoSuchPaddingException, NoSuchAlgorithmException, UnrecoverableEntryException, CertificateException, KeyStoreException, IOException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchProviderException, BadPaddingException, IllegalBlockSizeException {
+
+        initKeys();
+
+        if (encryptedData == null) {
+            throw new IllegalArgumentException("Data to be decrypted must be non null");
+        }
+
+        byte[] encryptedDecodedData = PasswordStorage.fromBase64(encryptedData);
+
+        Cipher c;
+        try {
+            SharedPreferences prefs= getSharedPreferences("PREFS", 0);
+            if (prefs.getString(encryptedData,"") != "") {
+
+                String key = prefs.getString(encryptedData,"");
+                byte[] encodedKey = PasswordStorage.fromBase64(key);
+                c = Cipher.getInstance("AES/GCM/NoPadding");
+                c.init(Cipher.DECRYPT_MODE, getSecretKey(), new GCMParameterSpec(128, encodedKey));
+                byte[] decodedBytes = c.doFinal(encryptedDecodedData);
                 return new String(decodedBytes);
-            } catch (Exception e) {
-//              Log.e(TAG, "AES decryption error");
-                e.printStackTrace();
-                return null;
             }
 
-        } else
-            return null;
+
+    } catch (Exception e) {
+            return e.toString();
+    }return null;
+    }
+
+    private Key getSecretKey() throws CertificateException, NoSuchAlgorithmException, IOException, KeyStoreException, UnrecoverableKeyException {
+        KeyStore keyStore = KeyStore.getInstance(ANDROID_KEY_STORE_NAME);
+        keyStore.load(null);
+        return keyStore.getKey(KEY_ALIAS, null);
 
     }
 

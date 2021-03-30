@@ -11,6 +11,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.provider.CalendarContract;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,14 +22,21 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 
 public class MainActivity extends AppCompatActivity {
 
     private ListView mListNotes;
     DatabaseHelper myDB;
+    public boolean pom;
+    public KeyStore keyStore;
+    private Cipher cipher;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -93,6 +103,12 @@ public class MainActivity extends AppCompatActivity {
                     //run the NoteActivity in view/edit mode
                     String fileName = ((Note) mListNotes.getItemAtPosition(position)).getDateTime()
                             + Utilities.FILE_EXTENSION;
+                    /*pom = true;
+                    Intent intent = new Intent(getApplicationContext(),FingerActivity.class);
+                    startActivity(intent);
+                    pom = false;
+
+                     */
                     Intent viewNoteIntent = new Intent(getApplicationContext(), NoteActivity.class);
                     viewNoteIntent.putExtra(Utilities.EXTRAS_NOTE_FILENAME, fileName);
                     startActivity(viewNoteIntent);

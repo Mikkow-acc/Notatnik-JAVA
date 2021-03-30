@@ -48,6 +48,7 @@ public class FingerActivity extends AppCompatActivity {
     private Cipher cipher;
     private String KEY_NAME = "AndroidKey";
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
